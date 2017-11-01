@@ -4,8 +4,13 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,24 +33,6 @@ public class MainActivity extends AppCompatActivity {
     private HackerNewsIdList mHackerNewsList;
 
 
-    public SQLiteDatabase createDB(Context context, String dbName){
-        SQLiteDatabase dataBase = null;
-        //File dbFile = context.getDatabasePath(dbName);
-        /*if (dbFile.exists()){
-            Log.i("Há Base de Dados?", "SIM!");
-        } else {
-            Log.i("Há Base de Dados?", "NÃO! CRIANDO!");*/
-            try {
-
-                dataBase = context.openOrCreateDatabase(dbName, MODE_PRIVATE, null);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        //}
-        Log.i("Criada/Aberta DB?", "SIM!");
-        return dataBase;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
         mHackerNewsList = ApiUtils.getHackerNews();
         mHackerNewsList = ApiUtils.getNews();
         newsItems = new ArrayList<>();
-
+        createUi();
 
         loadNewsList();
 
@@ -73,6 +60,42 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+    public void createUi(){
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ImageView toolbarImage = (ImageView) findViewById(R.id.toolbarImage);
+
+        Glide.with(this)
+                .load("https://source.unsplash.com/random")
+                .apply(RequestOptions.centerCropTransform())
+                .into(toolbarImage);
+
+
+
+    }
+
+
+    public SQLiteDatabase createDB(Context context, String dbName){
+        SQLiteDatabase dataBase = null;
+        //File dbFile = context.getDatabasePath(dbName);
+        /*if (dbFile.exists()){
+            Log.i("Há Base de Dados?", "SIM!");
+        } else {
+            Log.i("Há Base de Dados?", "NÃO! CRIANDO!");*/
+        try {
+
+            dataBase = context.openOrCreateDatabase(dbName, MODE_PRIVATE, null);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //}
+        Log.i("Criada/Aberta DB?", "SIM!");
+        return dataBase;
+    }
+
 
     public void loadNewsList(){
         mHackerNewsList.getHackerNews().enqueue(new Callback<List<Integer>>() {
