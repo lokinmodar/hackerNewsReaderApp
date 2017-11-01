@@ -17,6 +17,9 @@ public interface HackerNewsIdList{
     @GET("newstories.json")
     Call<List<Integer>> getHackerNews();
 
+    @GET("item/{item}.json")
+    Call<NewsItem> getNews(@Path("item") Integer item);
+
 
 
 }

@@ -5,27 +5,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsItem;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.ApiUtils;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.HackerNewsIdList;
-import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.HackerNewsList;
-import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.NewsUtils;
-import okhttp3.OkHttpClient;
 import retrofit2.Call;
 
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-import retrofit2.http.GET;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,13 +26,6 @@ public class MainActivity extends AppCompatActivity {
     NewsItem newsItem;
     List<NewsItem> newsItems;
     private HackerNewsIdList mHackerNewsList;
-    private HackerNewsList newsList;
-
-
-
-
-
-
 
 
     public SQLiteDatabase createDB(Context context, String dbName){
@@ -73,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         myDatabase = createDB(this, "hackerNewsDB");
 
         mHackerNewsList = ApiUtils.getHackerNews();
-        newsList = NewsUtils.getNews();
+        mHackerNewsList = ApiUtils.getNews();
         newsItems = new ArrayList<>();
 
 
@@ -146,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            newsList.getNews(item).enqueue(new Callback<NewsItem>() {
+            mHackerNewsList.getNews(item).enqueue(new Callback<NewsItem>() {
 
                 @Override
                 public void onResponse(Call<NewsItem> call, Response<NewsItem> response) {
