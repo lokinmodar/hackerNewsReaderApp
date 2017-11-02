@@ -4,17 +4,22 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.ahamed.multiviewadapter.DataGroupManager;
+import com.ahamed.multiviewadapter.DataListManager;
+import com.ahamed.multiviewadapter.RecyclerAdapter;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsBinder;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsItem;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.ApiUtils;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.HackerNewsIdList;
@@ -31,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
     NewsItem newsItem;
     List<NewsItem> newsItems;
     private HackerNewsIdList mHackerNewsList;
+    RecyclerView mRecyclerView;
 
 
 
@@ -50,6 +56,8 @@ public class MainActivity extends AppCompatActivity {
 
         loadNewsList();
 
+        setUpAdapter(newsItems);
+
         /*int size = newsItems.size();
         Log.i("MainActivity", "articles loaded from API");
         System.out.println("tamanho " + Integer.toString(size));
@@ -59,6 +67,17 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    }
+
+    private void setUpAdapter(List<NewsItem> newsList) {
+        RecyclerAdapter adapter = new RecyclerAdapter();
+        DataListManager<NewsItem> newsListManager = new DataListManager(adapter);
+
+
+        adapter.addDataManager(newsListManager);
+        adapter.registerBinder(new NewsBinder());
+
+        mRecyclerView.setAdapter(adapter);
     }
 
     public void createUi(){
@@ -71,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
                 .load("https://source.unsplash.com/random")
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
+
 
 
 
