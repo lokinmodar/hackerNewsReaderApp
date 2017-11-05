@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager myLlm = new LinearLayoutManager(this);
         myRecyclerView.setLayoutManager(myLlm);
 
-        loadNewsList();
+
     }
 
     public void createUi(){
@@ -92,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
                 .load("https://source.unsplash.com/random")
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
+
+        loadNewsList();
 
         setUpAdapter(newsItems);
 
@@ -224,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         myRVAdapter.refreshData(newsItems);
-        myRVAdapter.notifyDataSetChanged();
+        //myRVAdapter.notifyDataSetChanged();
 
 
     }
