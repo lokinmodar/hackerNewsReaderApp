@@ -23,7 +23,7 @@ public class NewsItem {
     private Integer score;
     @SerializedName("time")
     @Expose
-    private Integer time;
+    private Long time;
     @SerializedName("title")
     @Expose
     private String title;
@@ -66,11 +66,11 @@ public class NewsItem {
         this.score = score;
     }
 
-    public Integer getTime() {
+    public Long getTime() {
         return time;
     }
 
-    public void setTime(Integer time) {
+    public void setTime(Long time) {
         this.time = time;
     }
 

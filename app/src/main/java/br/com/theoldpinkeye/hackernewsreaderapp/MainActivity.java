@@ -1,5 +1,6 @@
 package br.com.theoldpinkeye.hackernewsreaderapp;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -38,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,20 +52,11 @@ public class MainActivity extends AppCompatActivity {
         mHackerNewsList = ApiUtils.getNews();
         newsItems = new ArrayList<>();
 
-
+        loadNewsList();
 
 
         createUi();
 
-
-
-
-        /*int size = newsItems.size();
-        Log.i("MainActivity", "articles loaded from API");
-        System.out.println("tamanho " + Integer.toString(size));
-        for (NewsItem item : newsItems) {
-
-        }*/
 
 
 
@@ -93,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
 
-        loadNewsList();
+
 
         setUpAdapter(newsItems);
 
@@ -128,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Integer>> call, Response<List<Integer>> response) {
                 if (response.isSuccessful()){
-                    Log.i("MainActivity", "list loaded from API");
+                    //Log.i("MainActivity", "list loaded from API");
                     List<Integer> itemList;
                     itemList = response.body();
                     if (response.errorBody() != null){
@@ -143,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
                     int size = itemList.size();
 
-                    System.out.println("tamanho " + Integer.toString(size));
+                    //System.out.println("tamanho " + Integer.toString(size));
                     /*for (Integer n : itemList){
                         System.out.println("item " + n);
 
@@ -168,16 +159,15 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-
-
     }
 
     public void populateList(List<Integer> n){
 
 
-        for (int i = 0; i<=20; i++){//final int item : n) {
+        for (final int item : n) {
+            //progressDialog.show();
 
-            mHackerNewsList.getNews(n.get(i)).enqueue(new Callback<NewsItem>() {
+            mHackerNewsList.getNews(item).enqueue(new Callback<NewsItem>() {
 
                 @Override
                 public void onResponse(Call<NewsItem> call, Response<NewsItem> response) {
@@ -188,8 +178,12 @@ public class MainActivity extends AppCompatActivity {
                         if (response.body() != null){
                             NewsItem newsItem = response.body();
                             newsItems.add(newsItem);
-                            System.out.println("item " +newsItem.getTitle());
-                            Log.d("News Items Size", String.valueOf(newsItems.size()));
+                            //System.out.println("item " + newsItem.getTitle());
+                            //System.out.println("item " + String.valueOf(newsItem.getTime()));
+                            //Log.d("News Items Size", String.valueOf(newsItems.size()));
+
+                            myRVAdapter.notifyItemInserted(newsItems.size());
+
 
 
                         } else {
@@ -200,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
                             try {
 
                                 Log.e("Error", response.errorBody().toString());
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -222,12 +217,6 @@ public class MainActivity extends AppCompatActivity {
             });
 
         }
-
-
-
-        myRVAdapter.refreshData(newsItems);
-        //myRVAdapter.notifyDataSetChanged();
-
 
     }
 

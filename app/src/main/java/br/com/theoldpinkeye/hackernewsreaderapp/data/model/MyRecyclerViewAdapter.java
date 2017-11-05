@@ -1,6 +1,7 @@
 package br.com.theoldpinkeye.hackernewsreaderapp.data.model;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,14 +53,16 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<PersonViewHolder
 
         holder.newsTitle.setText(newsItems.get(position).getTitle());
 
-        holder.timePublished.setText("Publicado em: " + convertTime(newsItems.get(position).getTime()));
+        holder.timePublished.setText("Published: " + convertTime(newsItems.get(position).getTime()));
+        //Log.e("Hora", String.valueOf(newsItems.get(position).getTime()));
 
     }
 
 
 
     public String convertTime(long time){
-        Date date = new Date(time);
+        Long dateMulti = time * 1000L;
+        Date date = new Date(dateMulti);
         Format format = new SimpleDateFormat("dd/MM/yyyy, HH:mm");
         return format.format(date);
     }
