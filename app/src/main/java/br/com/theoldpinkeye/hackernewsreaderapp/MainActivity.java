@@ -2,29 +2,26 @@ package br.com.theoldpinkeye.hackernewsreaderapp;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.ahamed.multiviewadapter.DataGroupManager;
-import com.ahamed.multiviewadapter.DataListManager;
-import com.ahamed.multiviewadapter.RecyclerAdapter;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsBinder;
+import br.com.theoldpinkeye.hackernewsreaderapp.data.model.MyRecyclerViewAdapter;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsItem;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.ApiUtils;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.HackerNewsIdList;
 import retrofit2.Call;
-
 import retrofit2.Callback;
 import retrofit2.Response;
 
@@ -32,11 +29,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     SQLiteDatabase myDatabase;
-    List<Integer> itemList;
-    NewsItem newsItem;
+
+
     List<NewsItem> newsItems;
     private HackerNewsIdList mHackerNewsList;
-    RecyclerView mRecyclerView;
+    MyRecyclerViewAdapter myRVAdapter;
+    RecyclerView myRecyclerView;
+
 
 
 
@@ -52,11 +51,14 @@ public class MainActivity extends AppCompatActivity {
         mHackerNewsList = ApiUtils.getHackerNews();
         mHackerNewsList = ApiUtils.getNews();
         newsItems = new ArrayList<>();
+
+
+
+
         createUi();
 
-        loadNewsList();
 
-        setUpAdapter(newsItems);
+
 
         /*int size = newsItems.size();
         Log.i("MainActivity", "articles loaded from API");
@@ -70,14 +72,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpAdapter(List<NewsItem> newsList) {
-        RecyclerAdapter adapter = new RecyclerAdapter();
-        DataListManager<NewsItem> newsListManager = new DataListManager(adapter);
 
+        myRecyclerView = (RecyclerView) findViewById(R.id.myRView);
+        myRVAdapter = new MyRecyclerViewAdapter(newsList);
+        myRecyclerView.setAdapter(myRVAdapter);
+        LinearLayoutManager myLlm = new LinearLayoutManager(this);
+        myRecyclerView.setLayoutManager(myLlm);
 
-        adapter.addDataManager(newsListManager);
-        adapter.registerBinder(new NewsBinder());
-
-        mRecyclerView.setAdapter(adapter);
+        loadNewsList();
     }
 
     public void createUi(){
@@ -91,10 +93,12 @@ public class MainActivity extends AppCompatActivity {
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
 
-
+        setUpAdapter(newsItems);
 
 
     }
+
+
 
 
     public SQLiteDatabase createDB(Context context, String dbName){
@@ -123,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<List<Integer>> call, Response<List<Integer>> response) {
                 if (response.isSuccessful()){
                     Log.i("MainActivity", "list loaded from API");
-                    itemList = new ArrayList<>();
+                    List<Integer> itemList;
                     itemList = response.body();
                     if (response.errorBody() != null){
                         try {
@@ -169,11 +173,9 @@ public class MainActivity extends AppCompatActivity {
     public void populateList(List<Integer> n){
 
 
-        for (final int item : n) {
+        for (int i = 0; i<=20; i++){//final int item : n) {
 
-
-
-            mHackerNewsList.getNews(item).enqueue(new Callback<NewsItem>() {
+            mHackerNewsList.getNews(n.get(i)).enqueue(new Callback<NewsItem>() {
 
                 @Override
                 public void onResponse(Call<NewsItem> call, Response<NewsItem> response) {
@@ -182,10 +184,11 @@ public class MainActivity extends AppCompatActivity {
 
                         //Log.i("Title", response.body().getTitle());
                         if (response.body() != null){
-                            newsItem = response.body();
+                            NewsItem newsItem = response.body();
                             newsItems.add(newsItem);
                             System.out.println("item " +newsItem.getTitle());
                             Log.d("News Items Size", String.valueOf(newsItems.size()));
+
 
                         } else {
                             Log.e("Erro", Integer.toString(response.code()));
@@ -217,6 +220,12 @@ public class MainActivity extends AppCompatActivity {
             });
 
         }
+
+
+
+        myRVAdapter.refreshData(newsItems);
+        myRVAdapter.notifyDataSetChanged();
+
 
     }
 
