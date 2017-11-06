@@ -22,6 +22,12 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<PersonViewHolder
 
     private List<NewsItem> newsItems = new ArrayList<>();
 
+    static ItemClickListener itemClickListener;
+
+    public void setOnItemClickListener(ItemClickListener itemClickListener){
+        this.itemClickListener = itemClickListener;
+    }
+
 
     public MyRecyclerViewAdapter(List<NewsItem> newsItems){
         this.newsItems = newsItems;

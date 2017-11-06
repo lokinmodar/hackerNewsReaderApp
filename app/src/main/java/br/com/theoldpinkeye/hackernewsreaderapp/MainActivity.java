@@ -1,6 +1,6 @@
 package br.com.theoldpinkeye.hackernewsreaderapp;
 
-import android.app.ProgressDialog;
+
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -18,6 +18,7 @@ import com.bumptech.glide.request.RequestOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+import br.com.theoldpinkeye.hackernewsreaderapp.data.model.ItemClickListener;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.model.MyRecyclerViewAdapter;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.model.NewsItem;
 import br.com.theoldpinkeye.hackernewsreaderapp.data.remote.ApiUtils;
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
         mHackerNewsList = ApiUtils.getHackerNews();
         mHackerNewsList = ApiUtils.getNews();
-        newsItems = new ArrayList<>();
+
 
         loadNewsList();
 
@@ -69,6 +70,13 @@ public class MainActivity extends AppCompatActivity {
         myRecyclerView.setAdapter(myRVAdapter);
         LinearLayoutManager myLlm = new LinearLayoutManager(this);
         myRecyclerView.setLayoutManager(myLlm);
+
+        myRVAdapter.setOnItemClickListener(new ItemClickListener() {
+            @Override
+            public void onItemClick(int position) {
+                Log.d("Item clicado", "Elemento " + position + " clicado.");
+            }
+        });
 
 
     }
@@ -115,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void loadNewsList(){
+        newsItems = new ArrayList<>();
         mHackerNewsList.getHackerNews().enqueue(new Callback<List<Integer>>() {
             @Override
             public void onResponse(Call<List<Integer>> call, Response<List<Integer>> response) {

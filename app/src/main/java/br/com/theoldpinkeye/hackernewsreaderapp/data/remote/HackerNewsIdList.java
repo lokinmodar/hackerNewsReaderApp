@@ -14,7 +14,7 @@ import retrofit2.http.Path;
 public interface HackerNewsIdList{
 
 
-    @GET("newstories.json")
+    @GET("topstories.json")
     Call<List<Integer>> getHackerNews();
 
     @GET("item/{item}.json")
