@@ -25,7 +25,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<PersonViewHolder
     static ItemClickListener itemClickListener;
 
     public void setOnItemClickListener(ItemClickListener itemClickListener){
-        this.itemClickListener = itemClickListener;
+        MyRecyclerViewAdapter.itemClickListener = itemClickListener;
     }
 
 
@@ -76,5 +76,12 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<PersonViewHolder
     @Override
     public int getItemCount() {
         return newsItems == null ? 0 : newsItems.size();
+    }
+
+    @Override
+    public String toString() {
+        return "MyRecyclerViewAdapter{" +
+                "newsItems=" + newsItems +
+                '}';
     }
 }

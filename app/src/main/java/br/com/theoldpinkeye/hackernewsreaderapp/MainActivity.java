@@ -2,6 +2,7 @@ package br.com.theoldpinkeye.hackernewsreaderapp;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     List<NewsItem> newsItems;
-    private HackerNewsIdList mHackerNewsList;
+
     MyRecyclerViewAdapter myRVAdapter;
     RecyclerView myRecyclerView;
 
@@ -49,8 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
         myDatabase = createDB(this, "hackerNewsDB");
 
-        mHackerNewsList = ApiUtils.getHackerNews();
-        mHackerNewsList = ApiUtils.getNews();
+
 
 
         loadNewsList();
@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setUpAdapter(List<NewsItem> newsList) {
 
-        myRecyclerView = (RecyclerView) findViewById(R.id.myRView);
+        myRecyclerView = findViewById(R.id.myRView);
         myRVAdapter = new MyRecyclerViewAdapter(newsList);
         myRecyclerView.setAdapter(myRVAdapter);
         LinearLayoutManager myLlm = new LinearLayoutManager(this);
@@ -74,6 +74,9 @@ public class MainActivity extends AppCompatActivity {
         myRVAdapter.setOnItemClickListener(new ItemClickListener() {
             @Override
             public void onItemClick(int position) {
+                Intent intent = new Intent(getApplicationContext(), contentViewActivity.class);
+                intent.putExtra("url", newsItems.get(position).getUrl());
+                startActivity(intent);
                 Log.d("Item clicado", "Elemento " + position + " clicado.");
             }
         });
@@ -83,9 +86,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void createUi(){
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        ImageView toolbarImage = (ImageView) findViewById(R.id.toolbarImage);
+        ImageView toolbarImage = findViewById(R.id.toolbarImage);
 
         Glide.with(this)
                 .load("https://source.unsplash.com/random")
@@ -123,6 +126,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void loadNewsList(){
+
+        HackerNewsIdList mHackerNewsList;
+
+        mHackerNewsList = ApiUtils.getHackerNews();
+
+
+
         newsItems = new ArrayList<>();
         mHackerNewsList.getHackerNews().enqueue(new Callback<List<Integer>>() {
             @Override
@@ -175,6 +185,9 @@ public class MainActivity extends AppCompatActivity {
 
         for (final int item : n) {
             //progressDialog.show();
+            HackerNewsIdList mHackerNewsList;
+
+            mHackerNewsList = ApiUtils.getNews();
 
             mHackerNewsList.getNews(item).enqueue(new Callback<NewsItem>() {
 

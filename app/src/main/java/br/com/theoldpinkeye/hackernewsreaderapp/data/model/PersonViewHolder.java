@@ -17,13 +17,13 @@ public class PersonViewHolder extends RecyclerView.ViewHolder implements View.On
 
 
 
-    public CardView newsCard;
-    public TextView newsTitle;
-    public TextView timePublished;
+    CardView newsCard;
+    TextView newsTitle;
+    TextView timePublished;
 
 
 
-    public PersonViewHolder(View itemView) {
+    PersonViewHolder(View itemView) {
         super(itemView);
 
         itemView.setOnClickListener(this);

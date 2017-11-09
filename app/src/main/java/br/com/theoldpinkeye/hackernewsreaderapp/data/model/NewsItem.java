@@ -98,6 +98,19 @@ public class NewsItem {
         this.url = url;
     }
 
+    @Override
+    public String toString() {
+        return "NewsItem{" +
+                "by='" + by + '\'' +
+                ", descendants=" + descendants +
+                ", id=" + id +
+                ", score=" + score +
+                ", time=" + time +
+                ", title='" + title + '\'' +
+                ", type='" + type + '\'' +
+                ", url='" + url + '\'' +
+                '}';
+    }
 }
 
 
