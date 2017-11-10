@@ -3,7 +3,11 @@ package br.com.theoldpinkeye.hackernewsreaderapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -35,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     List<NewsItem> newsItems;
+    Boolean loadedFromDb = false;
+
 
     MyRecyclerViewAdapter myRVAdapter;
     RecyclerView myRecyclerView;
@@ -46,14 +52,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //this.deleteDatabase("hackerNewsDB");
-
-        myDatabase = createDB(this, "hackerNewsDB");
 
 
+        dbOperations();
 
-
-        loadNewsList();
 
 
         createUi();
@@ -61,6 +63,116 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
+    }
+
+    public void dataLoad(){
+
+        if (isOnline()) {
+            myDatabase.execSQL("DELETE FROM articles");
+            loadNewsList();
+            setUpAdapter(newsItems);
+            Log.d("Loaded from web", "Yes");
+        } else {
+            newsItems = new ArrayList<>();
+
+            setUpAdapter(newsItems);
+            loadFromDb();
+            Log.d("Loaded from db", "Yes");
+            Log.e("Tamanho newsItems", String.valueOf(newsItems.size()));
+
+
+
+
+        }
+    }
+
+
+    public boolean isOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
+
+    public void loadFromDb(){
+
+
+
+        //List<NewsItem> oldItems = new ArrayList<>();
+        Cursor c = myDatabase.rawQuery("SELECT * FROM articles", null);
+
+        int authorIndex = c.getColumnIndex("author");
+        int descendantsIndex = c.getColumnIndex("descendants");
+        int idIndex = c.getColumnIndex("id");
+        int scoreIndex = c.getColumnIndex("score");
+        int timeIndex = c.getColumnIndex("time");
+        int titleIndex = c.getColumnIndex("title");
+        int typeIndex = c.getColumnIndex("type");
+        int urlIndex = c.getColumnIndex("url");
+
+        c.moveToFirst();
+
+        try {
+            while (c.moveToNext()){
+                NewsItem oldItem = new NewsItem();
+                oldItem.setBy(c.getString(authorIndex));
+                oldItem.setDescendants(c.getInt(descendantsIndex));
+                oldItem.setId(c.getInt(idIndex));
+                oldItem.setScore(c.getInt(scoreIndex));
+                oldItem.setTime(c.getLong(timeIndex));
+                oldItem.setTitle(c.getString(titleIndex));
+                oldItem.setType(c.getString(typeIndex));
+                oldItem.setUrl(c.getString(urlIndex));
+                newsItems.add(oldItem);
+                myRVAdapter.notifyItemInserted(newsItems.size());
+                Log.d("titulo", newsItems.get(c.getPosition()-1).getTitle());
+
+                Log.e("Registro carregado", "Sim!");
+            }
+
+        } finally {
+            c.close();
+        }
+
+
+        Log.e("List loaded from DB", "Yes!");
+        myDatabase.close();
+        loadedFromDb = true;
+       //  = oldItems;
+
+    }
+
+    public void dbOperations(){
+
+        myDatabase = createDB(this, "HackerNewsDB");
+
+
+                //this.openOrCreateDatabase("HackerNewsDB", MODE_PRIVATE, null );
+        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS articles (newsid PRIMARY KEY, author VARCHAR, descendants INTEGER, id INTEGER, score INTEGER, time BIGINT, title VARCHAR, type VARCHAR, url VARCHAR)");
+
+    }
+
+    public void saveToDb(NewsItem n){
+
+
+
+        //for (NewsItem n : items) {
+            dbOperations();
+            String sql = "INSERT INTO articles (author, descendants, id, score, time, title, type, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            SQLiteStatement statement = myDatabase.compileStatement(sql);
+            statement.bindString(1, n.getBy());
+            statement.bindString(2, String.valueOf(n.getDescendants()));
+            statement.bindString(3, String.valueOf(n.getId()));
+            statement.bindString(4, String.valueOf(n.getScore()));
+            statement.bindString(5, String.valueOf(n.getTime()));
+            statement.bindString(6, n.getTitle());
+            statement.bindString(7, n.getType());
+            statement.bindString(8, n.getUrl() != null ? n.getUrl() : "");
+            statement.execute();
+            myDatabase.close();
+       // }
     }
 
     private void setUpAdapter(List<NewsItem> newsList) {
@@ -78,9 +190,13 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra("url", newsItems.get(position).getUrl());
                 startActivity(intent);
                 Log.d("Item clicado", "Elemento " + position + " clicado.");
+
+
             }
         });
-
+        if (loadedFromDb){
+            myRVAdapter.notifyDataSetChanged();
+        }
 
     }
 
@@ -95,9 +211,9 @@ public class MainActivity extends AppCompatActivity {
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
 
+        dataLoad();
 
-
-        setUpAdapter(newsItems);
+        //setUpAdapter(newsItems);
 
 
     }
@@ -107,11 +223,6 @@ public class MainActivity extends AppCompatActivity {
 
     public SQLiteDatabase createDB(Context context, String dbName){
         SQLiteDatabase dataBase = null;
-        //File dbFile = context.getDatabasePath(dbName);
-        /*if (dbFile.exists()){
-            Log.i("Há Base de Dados?", "SIM!");
-        } else {
-            Log.i("Há Base de Dados?", "NÃO! CRIANDO!");*/
         try {
 
             dataBase = context.openOrCreateDatabase(dbName, MODE_PRIVATE, null);
@@ -119,8 +230,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //}
-        Log.i("Criada/Aberta DB?", "SIM!");
+        //Log.i("Criada/Aberta DB?", "SIM!");
         return dataBase;
     }
 
@@ -199,8 +309,9 @@ public class MainActivity extends AppCompatActivity {
                         //Log.i("Title", response.body().getTitle());
                         if (response.body() != null){
                             NewsItem newsItem = response.body();
+                            saveToDb(newsItem);
                             newsItems.add(newsItem);
-                            //System.out.println("item " + newsItem.getTitle());
+                            //System.out.println("item " + newsItem.getUrl());
                             //System.out.println("item " + String.valueOf(newsItem.getTime()));
                             //Log.d("News Items Size", String.valueOf(newsItems.size()));
 

@@ -17,9 +17,9 @@ public class PersonViewHolder extends RecyclerView.ViewHolder implements View.On
 
 
 
-    CardView newsCard;
-    TextView newsTitle;
-    TextView timePublished;
+    final CardView newsCard;
+    final TextView newsTitle;
+    final TextView timePublished;
 
 
 

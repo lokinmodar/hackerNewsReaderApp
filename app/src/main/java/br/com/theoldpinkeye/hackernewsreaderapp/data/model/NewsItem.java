@@ -1,9 +1,6 @@
 package br.com.theoldpinkeye.hackernewsreaderapp.data.model;
 
 
-/**
- * Created by Just Us on 23/10/2017.
- */
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
