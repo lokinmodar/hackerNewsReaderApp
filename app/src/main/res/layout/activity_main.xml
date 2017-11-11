@@ -43,32 +43,40 @@
         </android.support.design.widget.CollapsingToolbarLayout>
     </android.support.design.widget.AppBarLayout>
 
-
-    <android.support.v4.widget.NestedScrollView
-        android:id="@+id/appbarLayout"
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/swiperefresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:attr/colorButtonNormal"
         app:layout_behavior="android.support.design.widget.AppBarLayout$ScrollingViewBehavior">
-
-        <LinearLayout
-            android:id="@+id/myLinearLayout"
+        <android.support.v4.widget.NestedScrollView
+            android:id="@+id/appbarLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            tools:context="br.com.theoldpinkeye.notes.MainActivity">
+            android:layout_height="match_parent"
+            android:background="?android:attr/colorButtonNormal">
 
-            <android.support.v7.widget.RecyclerView
-                android:id="@+id/myRView"
+            <LinearLayout
+                android:id="@+id/myLinearLayout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                tools:context="br.com.theoldpinkeye.notes.MainActivity">
 
 
 
-        </LinearLayout>
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/myRView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
 
-    </android.support.v4.widget.NestedScrollView>
+
+            </LinearLayout>
+
+
+
+        </android.support.v4.widget.NestedScrollView>
+    </android.support.v4.widget.SwipeRefreshLayout>
 
 
 </android.support.design.widget.CoordinatorLayout>

@@ -9,6 +9,8 @@ import android.database.sqlite.SQLiteStatement;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.StrictMode;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -34,18 +36,12 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-
     SQLiteDatabase myDatabase;
-
-
     List<NewsItem> newsItems;
     Boolean loadedFromDb = false;
-
-
+    Boolean finishedLoading = false;
     MyRecyclerViewAdapter myRVAdapter;
     RecyclerView myRecyclerView;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,16 +49,57 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-
-        dbOperations();
-
-
-
         createUi();
 
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectLeakedSqlLiteObjects()
+                .detectLeakedClosableObjects()
+                .penaltyLog()
+                .penaltyDeath()
+                .build());
+
+    }
+
+    public void createUi(){
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ImageView toolbarImage = findViewById(R.id.toolbarImage);
+        final SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swiperefresh);
+
+        Glide.with(this)
+                .load("https://source.unsplash.com/random")
+                .apply(RequestOptions.centerCropTransform())
+                .into(toolbarImage);
+
+        dataLoad();
+
+        //TODO: Check swipe behavior - SQLite Leaking because saving not finished!
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                if (finishedLoading) {
+                    dataLoad();
+                    swipeRefreshLayout.setRefreshing(false);
+                } else {
+                    swipeRefreshLayout.setRefreshing(false);
+                    Toast.makeText(getApplicationContext(), "Try again later", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+
+    }
 
 
+    public void dbOperations(){
 
+
+        myDatabase = createDB(this, "HackerNewsDB");
+        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS articles (newsid PRIMARY KEY, author VARCHAR, descendants INTEGER, id INTEGER, score INTEGER, time BIGINT, title VARCHAR, type VARCHAR, url VARCHAR)");
 
 
     }
@@ -70,20 +107,17 @@ public class MainActivity extends AppCompatActivity {
     public void dataLoad(){
 
         if (isOnline()) {
+            dbOperations();
             myDatabase.execSQL("DELETE FROM articles");
             loadNewsList();
             setUpAdapter(newsItems);
             Log.d("Loaded from web", "Yes");
         } else {
             newsItems = new ArrayList<>();
-
             setUpAdapter(newsItems);
             loadFromDb();
             Log.d("Loaded from db", "Yes");
             Log.e("Tamanho newsItems", String.valueOf(newsItems.size()));
-
-
-
 
         }
     }
@@ -98,9 +132,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadFromDb(){
 
+        dbOperations();
 
-
-        //List<NewsItem> oldItems = new ArrayList<>();
         Cursor c = myDatabase.rawQuery("SELECT * FROM articles", null);
 
         int authorIndex = c.getColumnIndex("author");
@@ -127,38 +160,22 @@ public class MainActivity extends AppCompatActivity {
                 oldItem.setUrl(c.getString(urlIndex));
                 newsItems.add(oldItem);
                 myRVAdapter.notifyItemInserted(newsItems.size());
-                Log.d("titulo", newsItems.get(c.getPosition()-1).getTitle());
+                //Log.d("titulo", newsItems.get(c.getPosition()-1).getTitle());
 
-                Log.e("Registro carregado", "Sim!");
+                //Log.e("Registro carregado", "Sim!");
             }
 
         } finally {
             c.close();
+            Log.e("List loaded from DB", "Yes!");
+            //myDatabase.close();
+            loadedFromDb = true;
         }
-
-
-        Log.e("List loaded from DB", "Yes!");
-        myDatabase.close();
-        loadedFromDb = true;
-       //  = oldItems;
-
-    }
-
-    public void dbOperations(){
-
-        myDatabase = createDB(this, "HackerNewsDB");
-
-
-                //this.openOrCreateDatabase("HackerNewsDB", MODE_PRIVATE, null );
-        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS articles (newsid PRIMARY KEY, author VARCHAR, descendants INTEGER, id INTEGER, score INTEGER, time BIGINT, title VARCHAR, type VARCHAR, url VARCHAR)");
 
     }
 
     public void saveToDb(NewsItem n){
 
-
-
-        //for (NewsItem n : items) {
             dbOperations();
             String sql = "INSERT INTO articles (author, descendants, id, score, time, title, type, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             SQLiteStatement statement = myDatabase.compileStatement(sql);
@@ -172,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             statement.bindString(8, n.getUrl() != null ? n.getUrl() : "");
             statement.execute();
             myDatabase.close();
-       // }
+
     }
 
     private void setUpAdapter(List<NewsItem> newsList) {
@@ -200,25 +217,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void createUi(){
-
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        ImageView toolbarImage = findViewById(R.id.toolbarImage);
-
-        Glide.with(this)
-                .load("https://source.unsplash.com/random")
-                .apply(RequestOptions.centerCropTransform())
-                .into(toolbarImage);
-
-        dataLoad();
-
-        //setUpAdapter(newsItems);
-
-
-    }
-
-
 
 
     public SQLiteDatabase createDB(Context context, String dbName){
@@ -230,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //Log.i("Criada/Aberta DB?", "SIM!");
+
         return dataBase;
     }
 
@@ -238,17 +236,14 @@ public class MainActivity extends AppCompatActivity {
     public void loadNewsList(){
 
         HackerNewsIdList mHackerNewsList;
-
         mHackerNewsList = ApiUtils.getHackerNews();
-
-
 
         newsItems = new ArrayList<>();
         mHackerNewsList.getHackerNews().enqueue(new Callback<List<Integer>>() {
             @Override
             public void onResponse(Call<List<Integer>> call, Response<List<Integer>> response) {
                 if (response.isSuccessful()){
-                    //Log.i("MainActivity", "list loaded from API");
+
                     List<Integer> itemList;
                     itemList = response.body();
                     if (response.errorBody() != null){
@@ -258,20 +253,10 @@ public class MainActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-
                     }
 
                     int size = itemList.size();
-
-                    //System.out.println("tamanho " + Integer.toString(size));
-                    /*for (Integer n : itemList){
-                        System.out.println("item " + n);
-
-                    }*/
-
-                        populateList(itemList);
-
-
+                    populateList(itemList);
 
                 } else {
                     int statusCode = response.code();
@@ -292,32 +277,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void populateList(List<Integer> n){
 
-
         for (final int item : n) {
-            //progressDialog.show();
+
             HackerNewsIdList mHackerNewsList;
-
             mHackerNewsList = ApiUtils.getNews();
-
             mHackerNewsList.getNews(item).enqueue(new Callback<NewsItem>() {
 
                 @Override
                 public void onResponse(Call<NewsItem> call, Response<NewsItem> response) {
                     if (response.isSuccessful()) {
-
-
-                        //Log.i("Title", response.body().getTitle());
                         if (response.body() != null){
                             NewsItem newsItem = response.body();
                             saveToDb(newsItem);
                             newsItems.add(newsItem);
-                            //System.out.println("item " + newsItem.getUrl());
-                            //System.out.println("item " + String.valueOf(newsItem.getTime()));
-                            //Log.d("News Items Size", String.valueOf(newsItems.size()));
-
                             myRVAdapter.notifyItemInserted(newsItems.size());
-
-
+                            finishedLoading = true; //TODO: check this!
 
                         } else {
                             Log.e("Erro", Integer.toString(response.code()));
@@ -331,10 +305,7 @@ public class MainActivity extends AppCompatActivity {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-
                         }
-
-
                     } else {
                         int statusCode = response.code();
                         Log.e("Response Code", Integer.toString(statusCode));
@@ -350,6 +321,7 @@ public class MainActivity extends AppCompatActivity {
             });
 
         }
+
 
     }
 
