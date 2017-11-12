@@ -16,12 +16,8 @@ public class contentViewActivity extends AppCompatActivity {
 
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new WebViewClient());
-
         Intent intent = getIntent();
-
         webView.loadUrl(intent.getStringExtra("url"));
-
-
     }
     @Override
     public void onBackPressed(){
