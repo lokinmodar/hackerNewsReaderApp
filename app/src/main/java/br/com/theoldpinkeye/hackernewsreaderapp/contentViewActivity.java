@@ -20,5 +20,16 @@ public class contentViewActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         webView.loadUrl(intent.getStringExtra("url"));
+
+
+    }
+    @Override
+    public void onBackPressed(){
+
+
+        Intent mainIntent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(mainIntent);
+        finish();
+
     }
 }

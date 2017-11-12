@@ -38,10 +38,12 @@ public class MainActivity extends AppCompatActivity {
 
     SQLiteDatabase myDatabase;
     List<NewsItem> newsItems;
+    int itemListSize = 0;
     Boolean loadedFromDb = false;
     Boolean finishedLoading = false;
     MyRecyclerViewAdapter myRVAdapter;
     RecyclerView myRecyclerView;
+    SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,59 +67,83 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         ImageView toolbarImage = findViewById(R.id.toolbarImage);
-        final SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swiperefresh);
+        swipeRefreshLayout = findViewById(R.id.swiperefresh);
 
         Glide.with(this)
                 .load("https://source.unsplash.com/random")
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
-
+        //dbOperations();
         dataLoad();
 
         //TODO: Check swipe behavior - SQLite Leaking because saving not finished!
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                if (finishedLoading) {
-                    dataLoad();
-                    swipeRefreshLayout.setRefreshing(false);
-                } else {
-                    swipeRefreshLayout.setRefreshing(false);
-                    Toast.makeText(getApplicationContext(), "Try again later", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-        swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light);
+
 
     }
 
 
+    public void refreshing(){
+        if (itemListSize <= myRVAdapter.getItemCount()/*!myDatabase.isOpen()*/) {
+            swipeRefreshLayout.setEnabled(true);
+
+
+            swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+
+                    dataLoad();
+                    swipeRefreshLayout.setRefreshing(false);
+
+                }
+            });
+            swipeRefreshLayout.setColorSchemeResources(android.R.color.holo_blue_bright,
+                    android.R.color.holo_green_light,
+                    android.R.color.holo_orange_light,
+                    android.R.color.holo_red_light);
+        } else {
+            swipeRefreshLayout.setEnabled(false);
+            swipeRefreshLayout.setRefreshing(false);
+            //Toast.makeText(getApplicationContext(), "Try again later", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     public void dbOperations(){
 
+        try{
 
-        myDatabase = createDB(this, "HackerNewsDB");
-        myDatabase.execSQL("CREATE TABLE IF NOT EXISTS articles (newsid PRIMARY KEY, author VARCHAR, descendants INTEGER, id INTEGER, score INTEGER, time BIGINT, title VARCHAR, type VARCHAR, url VARCHAR)");
-
+            myDatabase = getApplicationContext().openOrCreateDatabase("HackerNewsDB",MODE_PRIVATE, null);
+            if (myDatabase.isOpen()) {
+                myDatabase.execSQL("CREATE TABLE IF NOT EXISTS articles (newsid PRIMARY KEY, author VARCHAR, descendants INTEGER, id INTEGER, score INTEGER, time BIGINT, title VARCHAR, type VARCHAR, url VARCHAR)");
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 
     }
 
     public void dataLoad(){
 
         if (isOnline()) {
+            swipeRefreshLayout.setRefreshing(false);
+            swipeRefreshLayout.setEnabled(false);
+            //if (myDatabase.isOpen()){
+            //    myDatabase.close();
+            //}
+
             dbOperations();
             myDatabase.execSQL("DELETE FROM articles");
             loadNewsList();
             setUpAdapter(newsItems);
             Log.d("Loaded from web", "Yes");
+
         } else {
             newsItems = new ArrayList<>();
             setUpAdapter(newsItems);
             loadFromDb();
             Log.d("Loaded from db", "Yes");
             Log.e("Tamanho newsItems", String.valueOf(newsItems.size()));
+            swipeRefreshLayout.setEnabled(true);
+            refreshing();
 
         }
     }
@@ -167,9 +193,10 @@ public class MainActivity extends AppCompatActivity {
 
         } finally {
             c.close();
-            Log.e("List loaded from DB", "Yes!");
-            //myDatabase.close();
+            //Log.e("List loaded from DB", "Yes!");
+            myDatabase.close();
             loadedFromDb = true;
+            swipeRefreshLayout.setEnabled(true);
         }
 
     }
@@ -190,6 +217,9 @@ public class MainActivity extends AppCompatActivity {
             statement.execute();
             myDatabase.close();
 
+
+
+
     }
 
     private void setUpAdapter(List<NewsItem> newsList) {
@@ -203,9 +233,13 @@ public class MainActivity extends AppCompatActivity {
         myRVAdapter.setOnItemClickListener(new ItemClickListener() {
             @Override
             public void onItemClick(int position) {
+                myDatabase.close();
                 Intent intent = new Intent(getApplicationContext(), contentViewActivity.class);
                 intent.putExtra("url", newsItems.get(position).getUrl());
+
                 startActivity(intent);
+
+
                 Log.d("Item clicado", "Elemento " + position + " clicado.");
 
 
@@ -216,6 +250,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+    @Override
+    public void onRestart() {
+        super.onRestart();
+
+        createUi();
+    }
 
 
 
@@ -223,7 +263,9 @@ public class MainActivity extends AppCompatActivity {
         SQLiteDatabase dataBase = null;
         try {
 
-            dataBase = context.openOrCreateDatabase(dbName, MODE_PRIVATE, null);
+                dataBase = context.openOrCreateDatabase(dbName, MODE_PRIVATE, null);
+
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -255,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
 
                     }
 
-                    int size = itemList.size();
+                    itemListSize = itemList.size();
                     populateList(itemList);
 
                 } else {
@@ -291,7 +333,9 @@ public class MainActivity extends AppCompatActivity {
                             saveToDb(newsItem);
                             newsItems.add(newsItem);
                             myRVAdapter.notifyItemInserted(newsItems.size());
-                            finishedLoading = true; //TODO: check this!
+                            myDatabase.close();
+                            refreshing();
+
 
                         } else {
                             Log.e("Erro", Integer.toString(response.code()));
