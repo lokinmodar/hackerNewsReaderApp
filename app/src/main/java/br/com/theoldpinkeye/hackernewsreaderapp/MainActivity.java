@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     SQLiteDatabase myDatabase;
     List<NewsItem> newsItems;
     int itemListSize = 0;
-    Boolean loadedFromDb = false;
+    Boolean loadedFromDb;
     Boolean finishedLoading = false;
     MyRecyclerViewAdapter myRVAdapter;
     RecyclerView myRecyclerView;
@@ -50,15 +50,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        loadedFromDb = false;
+
 
         createUi();
 
-        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+        /*StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
                 .detectLeakedSqlLiteObjects()
                 .detectLeakedClosableObjects()
                 .penaltyLog()
                 .penaltyDeath()
-                .build());
+                .build());*/
 
     }
 
@@ -73,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 .load("https://source.unsplash.com/random")
                 .apply(RequestOptions.centerCropTransform())
                 .into(toolbarImage);
-        //dbOperations();
+        dbOperations();
         dataLoad();
 
         //TODO: Check swipe behavior - SQLite Leaking because saving not finished!
@@ -130,8 +132,7 @@ public class MainActivity extends AppCompatActivity {
             //    myDatabase.close();
             //}
 
-            dbOperations();
-            myDatabase.execSQL("DELETE FROM articles");
+
             loadNewsList();
             setUpAdapter(newsItems);
             Log.d("Loaded from web", "Yes");
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadFromDb(){
 
-        dbOperations();
+        //dbOperations();
 
         Cursor c = myDatabase.rawQuery("SELECT * FROM articles", null);
 
@@ -192,9 +193,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
         } finally {
-            c.close();
+            if (c != null) {
+                c.close();
+            }
             //Log.e("List loaded from DB", "Yes!");
-            myDatabase.close();
+            //myDatabase.close();
             loadedFromDb = true;
             swipeRefreshLayout.setEnabled(true);
         }
@@ -203,19 +206,24 @@ public class MainActivity extends AppCompatActivity {
 
     public void saveToDb(NewsItem n){
 
-            dbOperations();
-            String sql = "INSERT INTO articles (author, descendants, id, score, time, title, type, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            SQLiteStatement statement = myDatabase.compileStatement(sql);
-            statement.bindString(1, n.getBy());
-            statement.bindString(2, String.valueOf(n.getDescendants()));
-            statement.bindString(3, String.valueOf(n.getId()));
-            statement.bindString(4, String.valueOf(n.getScore()));
-            statement.bindString(5, String.valueOf(n.getTime()));
-            statement.bindString(6, n.getTitle());
-            statement.bindString(7, n.getType());
-            statement.bindString(8, n.getUrl() != null ? n.getUrl() : "");
-            statement.execute();
-            myDatabase.close();
+
+                //dbOperations();
+                String sql = "INSERT INTO articles (author, descendants, id, score, time, title, type, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                SQLiteStatement statement = myDatabase.compileStatement(sql);
+        try {
+                statement.bindString(1, n.getBy());
+                statement.bindString(2, String.valueOf(n.getDescendants()));
+                statement.bindString(3, String.valueOf(n.getId()));
+                statement.bindString(4, String.valueOf(n.getScore()));
+                statement.bindString(5, String.valueOf(n.getTime()));
+                statement.bindString(6, n.getTitle());
+                statement.bindString(7, n.getType());
+                statement.bindString(8, n.getUrl() != null ? n.getUrl() : "");
+                statement.execute();
+
+            } finally {
+                statement.close();
+            }
 
 
 
@@ -230,21 +238,26 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager myLlm = new LinearLayoutManager(this);
         myRecyclerView.setLayoutManager(myLlm);
 
-        myRVAdapter.setOnItemClickListener(new ItemClickListener() {
-            @Override
-            public void onItemClick(int position) {
-                myDatabase.close();
-                Intent intent = new Intent(getApplicationContext(), contentViewActivity.class);
-                intent.putExtra("url", newsItems.get(position).getUrl());
-
-                startActivity(intent);
 
 
-                Log.d("Item clicado", "Elemento " + position + " clicado.");
+            myRVAdapter.setOnItemClickListener(new ItemClickListener() {
+                @Override
+                public void onItemClick(int position) {
+                    if (isOnline()) {
+                        //myDatabase.close();
+                        Intent intent = new Intent(getApplicationContext(), contentViewActivity.class);
+                        intent.putExtra("url", newsItems.get(position).getUrl());
+
+                        startActivity(intent);
 
 
-            }
-        });
+                        Log.d("Item clicado", "Elemento " + position + " clicado.");
+                    } else {
+                        showErrorMessage();
+                        refreshing();
+                    }
+                }
+            });
         if (loadedFromDb){
             myRVAdapter.notifyDataSetChanged();
         }
@@ -279,7 +292,8 @@ public class MainActivity extends AppCompatActivity {
 
         HackerNewsIdList mHackerNewsList;
         mHackerNewsList = ApiUtils.getHackerNews();
-
+        //dbOperations();
+        myDatabase.execSQL("DELETE FROM articles");
         newsItems = new ArrayList<>();
         mHackerNewsList.getHackerNews().enqueue(new Callback<List<Integer>>() {
             @Override
@@ -333,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                             saveToDb(newsItem);
                             newsItems.add(newsItem);
                             myRVAdapter.notifyItemInserted(newsItems.size());
-                            myDatabase.close();
+                            //myDatabase.close();
                             refreshing();
 
 
@@ -360,6 +374,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onFailure(Call<NewsItem> call, Throwable t) {
                     showErrorMessage();
                     Log.e("MainActivity", "error loading articles from API");
+                    dataLoad();
                 }
 
             });
@@ -370,6 +385,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showErrorMessage(){
-        Toast.makeText(this, "Erro ao carregar", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Erro ao carregar", Toast.LENGTH_SHORT).show();
     }
 }
